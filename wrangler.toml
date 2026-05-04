@@ -1,0 +1,6 @@
+name = "workers-ai-proxy"
+main = "src/index.ts"
+compatibility_date = "2025-04-01"
+
+[ai]
+binding = "AI"

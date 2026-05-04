@@ -1,0 +1,10 @@
+node_modules/
+dist/
+.dev.vars
+.wrangler/
+.dev/
+.build-test/
+.opencode/
+openspec/
+test-output/
+*.log

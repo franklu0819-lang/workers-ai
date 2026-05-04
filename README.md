@@ -43,7 +43,7 @@ POST /v1/chat/completions
 
 ```json
 {
-  "model": "llama-8b-fast",
+  "model": "llama-3.1-8b-fast",
   "messages": [{"role": "user", "content": "Hello"}],
   "stream": false
 }
@@ -109,18 +109,18 @@ GET /v1/models
 
 | Alias | Model ID |
 |-------|----------|
-| `llama-8b-fast` | `@cf/meta/llama-3.1-8b-instruct-fast` |
-| `llama-8b` | `@cf/meta/llama-3.1-8b-instruct` |
-| `llama-70b` | `@cf/meta/llama-3.3-70b-instruct-fp8-fast` |
+| `llama-3.1-8b-fast` | `@cf/meta/llama-3.1-8b-instruct-fast` |
+| `llama-3.1-8b` | `@cf/meta/llama-3.1-8b-instruct` |
+| `llama-3.3-70b` | `@cf/meta/llama-3.3-70b-instruct-fp8-fast` |
 | `llama-4-scout` | `@cf/meta/llama-4-scout-17b-16e-instruct` |
-| `llama-3b` | `@cf/meta/llama-3.2-3b-instruct` |
-| `llama-1b` | `@cf/meta/llama-3.2-1b-instruct` |
+| `llama-3.2-3b` | `@cf/meta/llama-3.2-3b-instruct` |
+| `llama-3.2-1b` | `@cf/meta/llama-3.2-1b-instruct` |
 | `deepseek-r1-32b` | `@cf/deepseek-ai/deepseek-r1-distill-qwen-32b` |
-| `qwen3-30b` | `@cf/qwen/qwen3-30b-a3b-fp8` |
+| `qwen3-30b-a3b` | `@cf/qwen/qwen3-30b-a3b-fp8` |
 | `qwq-32b` | `@cf/qwen/qwq-32b` |
-| `qwen-coder` | `@cf/qwen/qwen2.5-coder-32b-instruct` |
+| `qwen2.5-coder` | `@cf/qwen/qwen2.5-coder-32b-instruct` |
 | `gemma-3-12b` | `@cf/google/gemma-3-12b-it` |
-| `gemma-4-26b` | `@cf/google/gemma-4-26b-a4b-it` |
+| `gemma-4-26b-a4b` | `@cf/google/gemma-4-26b-a4b-it` |
 | `granite-micro` | `@cf/ibm-granite/granite-4.0-h-micro` |
 | `mistral-small` | `@cf/mistralai/mistral-small-3.1-24b-instruct` |
 | `glm-4.7-flash` | `@cf/zai-org/glm-4.7-flash` |
@@ -184,14 +184,14 @@ client = OpenAI(
 
 # Chat
 response = client.chat.completions.create(
-    model="llama-8b-fast",
+    model="llama-3.1-8b-fast",
     messages=[{"role": "user", "content": "Hello!"}],
 )
 print(response.choices[0].message.content)
 
 # Streaming
 for chunk in client.chat.completions.create(
-    model="llama-70b",
+    model="llama-3.3-70b",
     messages=[{"role": "user", "content": "Tell me a story"}],
     stream=True,
 ):

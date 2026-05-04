@@ -200,4 +200,4 @@ for chunk in client.chat.completions.create(
 
 ## License
 
-Private
+[MIT](LICENSE)

@@ -156,6 +156,13 @@ export async function handleChat(
     const chatResult = result as Record<string, unknown>;
 
     if (chatResult.choices && Array.isArray(chatResult.choices)) {
+      // Normalize reasoning models: ensure content is never null when reasoning exists
+      for (const choice of chatResult.choices as Array<Record<string, unknown>>) {
+        const msg = choice.message as Record<string, unknown> | undefined;
+        if (msg && !msg.content && (msg.reasoning_content || msg.reasoning)) {
+          msg.content = msg.reasoning_content ?? msg.reasoning;
+        }
+      }
       return new Response(
         JSON.stringify(chatResult),
         {

@@ -23,7 +23,6 @@ export const DEFAULT_IMAGE_MODEL = "@cf/black-forest-labs/flux-1-schnell";
 const MODEL_ENTRIES: readonly ModelEntry[] = [
   // Chat models
   { alias: "llama-3.1-8b-fast", id: "@cf/meta/llama-3.1-8b-instruct-fast", type: "chat" },
-  { alias: "llama-3.1-8b", id: "@cf/meta/llama-3.1-8b-instruct", type: "chat" },
   { alias: "llama-3.2-3b", id: "@cf/meta/llama-3.2-3b-instruct", type: "chat" },
   { alias: "llama-3.2-1b", id: "@cf/meta/llama-3.2-1b-instruct", type: "chat" },
   { alias: "llama-3.3-70b", id: "@cf/meta/llama-3.3-70b-instruct-fp8-fast", type: "chat" },
@@ -32,17 +31,14 @@ const MODEL_ENTRIES: readonly ModelEntry[] = [
   { alias: "qwen2.5-coder", id: "@cf/qwen/qwen2.5-coder-32b-instruct", type: "chat" },
   { alias: "qwen3-30b-a3b", id: "@cf/qwen/qwen3-30b-a3b-fp8", type: "chat" },
   { alias: "deepseek-r1-32b", id: "@cf/deepseek-ai/deepseek-r1-distill-qwen-32b", type: "chat" },
-  { alias: "gemma-3-12b", id: "@cf/google/gemma-3-12b-it", type: "chat" },
   { alias: "gemma-4-26b-a4b", id: "@cf/google/gemma-4-26b-a4b-it", type: "chat" },
   { alias: "granite-micro", id: "@cf/ibm-granite/granite-4.0-h-micro", type: "chat" },
   { alias: "mistral-small", id: "@cf/mistralai/mistral-small-3.1-24b-instruct", type: "chat" },
   { alias: "glm-4.7-flash", id: "@cf/zai-org/glm-4.7-flash", type: "chat" },
   { alias: "gpt-oss-120b", id: "@cf/openai/gpt-oss-120b", type: "chat" },
   { alias: "gpt-oss-20b", id: "@cf/openai/gpt-oss-20b", type: "chat" },
-  { alias: "kimi-k2.5", id: "@cf/moonshotai/kimi-k2.5", type: "chat" },
   { alias: "kimi-k2.6", id: "@cf/moonshotai/kimi-k2.6", type: "chat" },
   { alias: "nemotron-3-120b", id: "@cf/nvidia/nemotron-3-120b-a12b", type: "chat" },
-  { alias: "hermes-2-pro", id: "@hf/nousresearch/hermes-2-pro-mistral-7b", type: "chat" },
   // Image models
   { alias: "flux-schnell", id: "@cf/black-forest-labs/flux-1-schnell", type: "image" },
   { alias: "flux-2-dev", id: "@cf/black-forest-labs/flux-2-dev", type: "image" },

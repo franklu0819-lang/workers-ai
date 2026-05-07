@@ -105,12 +105,11 @@ GET /v1/models
 
 ## Supported Models
 
-### Chat (21 models)
+### Chat (17 models)
 
 | Alias | Model ID |
 |-------|----------|
 | `llama-3.1-8b-fast` | `@cf/meta/llama-3.1-8b-instruct-fast` |
-| `llama-3.1-8b` | `@cf/meta/llama-3.1-8b-instruct` |
 | `llama-3.3-70b` | `@cf/meta/llama-3.3-70b-instruct-fp8-fast` |
 | `llama-4-scout` | `@cf/meta/llama-4-scout-17b-16e-instruct` |
 | `llama-3.2-3b` | `@cf/meta/llama-3.2-3b-instruct` |
@@ -119,17 +118,14 @@ GET /v1/models
 | `qwen3-30b-a3b` | `@cf/qwen/qwen3-30b-a3b-fp8` |
 | `qwq-32b` | `@cf/qwen/qwq-32b` |
 | `qwen2.5-coder` | `@cf/qwen/qwen2.5-coder-32b-instruct` |
-| `gemma-3-12b` | `@cf/google/gemma-3-12b-it` |
 | `gemma-4-26b-a4b` | `@cf/google/gemma-4-26b-a4b-it` |
 | `granite-micro` | `@cf/ibm-granite/granite-4.0-h-micro` |
 | `mistral-small` | `@cf/mistralai/mistral-small-3.1-24b-instruct` |
 | `glm-4.7-flash` | `@cf/zai-org/glm-4.7-flash` |
 | `gpt-oss-120b` | `@cf/openai/gpt-oss-120b` |
 | `gpt-oss-20b` | `@cf/openai/gpt-oss-20b` |
-| `kimi-k2.5` | `@cf/moonshotai/kimi-k2.5` |
 | `kimi-k2.6` | `@cf/moonshotai/kimi-k2.6` |
 | `nemotron-3-120b` | `@cf/nvidia/nemotron-3-120b-a12b` |
-| `hermes-2-pro` | `@hf/nousresearch/hermes-2-pro-mistral-7b` |
 
 ### Image (5 models)
 

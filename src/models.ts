@@ -78,15 +78,19 @@ export function getModelList(): {
   data: ModelInfo[];
 } {
   const created = Math.floor(Date.now() / 1000);
-  return {
-    object: "list",
-    data: MODEL_ENTRIES.map((entry) => ({
-      id: entry.id,
+  const entries: ModelInfo[] = [];
+  for (const entry of MODEL_ENTRIES) {
+    entries.push({
+      id: entry.alias,
       object: "model" as const,
       created,
       owned_by: "cloudflare",
       type: entry.type,
-      alias: entry.alias,
-    })),
+      alias: entry.id,
+    });
+  }
+  return {
+    object: "list",
+    data: entries,
   };
 }

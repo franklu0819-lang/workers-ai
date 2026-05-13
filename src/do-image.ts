@@ -72,7 +72,7 @@ async function runJson(
     prompt,
     width,
     height,
-    num_steps: steps,
+    steps,
   }) as AiImageResponse;
 }
 
@@ -101,10 +101,8 @@ export async function handleImage(
   const model = resolveModel(rawModel);
 
   const isMultipart = MULTIPART_MODELS.has(model);
-  const defaultW = isMultipart ? 1024 : 512;
-  const defaultH = isMultipart ? 768 : 512;
+  const { width, height } = parseSize(body.size, 1024, 1024);
   const defaultSteps = isMultipart ? 20 : 4;
-  const { width, height } = parseSize(body.size, defaultW, defaultH);
   const steps = body.steps ?? defaultSteps;
 
   let result: AiImageResponse;

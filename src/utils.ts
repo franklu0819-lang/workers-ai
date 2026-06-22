@@ -1,4 +1,4 @@
-export function arrayBufferToBase64(buffer: ArrayBuffer): string {
+export function arrayBufferToBase64(buffer: ArrayBufferLike): string {
   const bytes = new Uint8Array(buffer);
   const chunks: string[] = [];
   const chunkSize = 8192;

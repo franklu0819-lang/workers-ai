@@ -1,9 +1,7 @@
-import { resolveModel } from "./models";
+import { resolveModel, DEFAULT_ASR_MODEL } from "./models";
 import { errorResponse } from "./auth";
 import { arrayBufferToBase64 } from "./utils";
 import type { Env } from "./types";
-
-const DEFAULT_ASR_MODEL = "@cf/openai/whisper";
 
 const BASE64_AUDIO_MODELS = new Set([
   "@cf/openai/whisper-large-v3-turbo",

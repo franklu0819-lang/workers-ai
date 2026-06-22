@@ -26,19 +26,11 @@ export function validateAuth(
 
   const authHeader = request.headers.get("Authorization");
 
-  if (!authHeader) {
-    return errorResponse(401, "Missing Authorization header", "auth_error", null, "invalid_api_key");
-  }
-
-  if (!authHeader.startsWith("Bearer ")) {
-    return errorResponse(401, "Invalid Authorization header format", "auth_error", null, "invalid_api_key");
+  if (!authHeader || !authHeader.startsWith("Bearer ")) {
+    return errorResponse(401, "Missing or invalid Authorization header", "auth_error", null, "invalid_api_key");
   }
 
   const token = authHeader.slice(7);
-  if (!token) {
-    return errorResponse(401, "Invalid API key", "auth_error", null, "invalid_api_key");
-  }
-
   if (!timingSafeEqual(token, env.API_KEY)) {
     return errorResponse(401, "Invalid API key", "auth_error", null, "invalid_api_key");
   }
@@ -46,22 +38,25 @@ export function validateAuth(
   return null;
 }
 
+// Fixed-window constant-time compare. The loop always runs COMPARE_WINDOW
+// iterations regardless of input lengths, so timing does not leak the secret
+// length. Inputs longer than the window are rejected outright.
+const COMPARE_WINDOW = 256;
+
 function timingSafeEqual(a: string, b: string): boolean {
   const encoder = new TextEncoder();
   const bufA = encoder.encode(a);
   const bufB = encoder.encode(b);
 
-  // Constant-time length check: compare full length of the longer buffer
-  const maxLen = Math.max(bufA.length, bufB.length);
-  const paddedA = new Uint8Array(maxLen);
-  const paddedB = new Uint8Array(maxLen);
-  paddedA.set(bufA);
-  paddedB.set(bufB);
-
-  let lengthMatch = bufA.length === bufB.length;
-  let contentMatch = true;
-  for (let i = 0; i < maxLen; i++) {
-    contentMatch &&= paddedA[i] === paddedB[i];
+  if (bufA.length > COMPARE_WINDOW || bufB.length > COMPARE_WINDOW) {
+    return false;
   }
-  return lengthMatch && contentMatch;
+
+  let match = bufA.length === bufB.length;
+  for (let i = 0; i < COMPARE_WINDOW; i++) {
+    const aByte = i < bufA.length ? bufA[i] : 0;
+    const bByte = i < bufB.length ? bufB[i] : 0;
+    match = match && aByte === bByte;
+  }
+  return match;
 }

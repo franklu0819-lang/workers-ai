@@ -19,6 +19,8 @@ interface ModelEntry {
 
 export const DEFAULT_CHAT_MODEL = "@cf/meta/llama-3.1-8b-instruct-fast";
 export const DEFAULT_IMAGE_MODEL = "@cf/black-forest-labs/flux-1-schnell";
+export const DEFAULT_TTS_MODEL = "@cf/myshell-ai/melotts";
+export const DEFAULT_ASR_MODEL = "@cf/openai/whisper";
 
 const MODEL_ENTRIES: readonly ModelEntry[] = [
   // Chat models
@@ -58,6 +60,8 @@ const aliasMap = new Map<string, string>(
   MODEL_ENTRIES.map((entry) => [entry.alias, entry.id]),
 );
 
+const LIST_CREATED = Math.floor(Date.now() / 1000);
+
 /**
  * Resolve a model identifier.
  * - Known alias → full @cf/ ID
@@ -77,13 +81,12 @@ export function getModelList(): {
   object: "list";
   data: ModelInfo[];
 } {
-  const created = Math.floor(Date.now() / 1000);
   const entries: ModelInfo[] = [];
   for (const entry of MODEL_ENTRIES) {
     entries.push({
       id: entry.alias,
       object: "model" as const,
-      created,
+      created: LIST_CREATED,
       owned_by: "cloudflare",
       type: entry.type,
       alias: entry.id,

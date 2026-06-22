@@ -6,7 +6,8 @@ import { handleTts } from "./do-tts";
 import { handleAsr } from "./do-asr";
 import type { Env } from "./types";
 
-const MAX_BODY_SIZE = 10 * 1024 * 1024; // 10 MB
+const MAX_BODY_SIZE = 10 * 1024 * 1024; // 10 MB for JSON bodies
+const MAX_MULTIPART_SIZE = 25 * 1024 * 1024; // 25 MB for audio uploads
 
 function withCORS(response: Response): Response {
   const headers = new Headers(response.headers);
@@ -65,13 +66,18 @@ export default {
     if (request.method === "POST") {
       const ct = request.headers.get("Content-Type") || "";
       const isMultipart = ct.includes("multipart/form-data");
-      if (!isMultipart) {
-        const contentLength = request.headers.get("Content-Length");
-        if (!contentLength || parseInt(contentLength, 10) > MAX_BODY_SIZE) {
+      const limit = isMultipart ? MAX_MULTIPART_SIZE : MAX_BODY_SIZE;
+      const contentLength = request.headers.get("Content-Length");
+      if (!contentLength) {
+        if (!isMultipart) {
           return withCORS(
             errorResponse(413, "Request body too large", "invalid_request_error"),
           );
         }
+      } else if (parseInt(contentLength, 10) > limit) {
+        return withCORS(
+          errorResponse(413, "Request body too large", "invalid_request_error"),
+        );
       }
     }
 

@@ -64,6 +64,7 @@ function transformSseStream(source: ReadableStream, id: string, created: number,
   let sentRole = false;
 
   const encode = (text: string) => new TextEncoder().encode(text);
+  const MAX_BUFFER = 1024 * 1024;
 
   function ensureRole(controller: ReadableStreamDefaultController) {
     if (sentRole) return;
@@ -94,6 +95,9 @@ function transformSseStream(source: ReadableStream, id: string, created: number,
         }
 
         buffer += decoder.decode(value, { stream: true });
+        if (buffer.length > MAX_BUFFER) {
+          buffer = "";
+        }
         const lines = buffer.split("\n");
         buffer = lines.pop() ?? "";
 
@@ -163,7 +167,7 @@ export async function handleChat(
   const model = resolveModel(rawModel);
   const isStream = body.stream === true;
 
-  const completionId = `chatcmpl-${crypto.randomUUID().replace(/-/g, "").slice(0, 24)}`;
+  const completionId = `chatcmpl-${crypto.randomUUID().replace(/-/g, "").slice(0, 29)}`;
   const created = Math.floor(Date.now() / 1000);
 
   const params: Record<string, unknown> = {
@@ -179,46 +183,45 @@ export async function handleChat(
   try {
     const result = await env.AI.run(model, params);
 
-    if (isStream && result instanceof ReadableStream) {
-      return new Response(transformSseStream(result, completionId, created, model), {
-        status: 200,
-        headers: {
-          "Content-Type": "text/event-stream",
-          "Cache-Control": "no-cache",
-        },
-      });
+    if (isStream) {
+      if (result instanceof ReadableStream) {
+        return new Response(transformSseStream(result, completionId, created, model), {
+          status: 200,
+          headers: {
+            "Content-Type": "text/event-stream",
+            "Cache-Control": "no-cache",
+          },
+        });
+      }
+      return errorResponse(
+        500,
+        "Streaming was requested but the model returned a non-stream response",
+        "server_error",
+      );
     }
 
     const chatResult = result as Record<string, unknown>;
 
     if (chatResult.choices && Array.isArray(chatResult.choices)) {
-      // Normalize reasoning models: merge reasoning_content into content for client compatibility
-      for (const choice of chatResult.choices as Array<Record<string, unknown>>) {
-        const msg = choice.message as Record<string, unknown> | undefined;
-        if (!msg) continue;
-        const hasReasoning = msg.reasoning_content ?? msg.reasoning;
-        if (hasReasoning && !msg.content) {
-          msg.content = hasReasoning;
-        }
-      }
-      // Clean response to OpenAI-compatible shape
+      const usage = chatResult.usage as Record<string, unknown> | undefined;
       const cleaned = {
         id: completionId,
         object: "chat.completion",
         created,
         model,
         choices: (chatResult.choices as Array<Record<string, unknown>>).map((choice) => {
-          const msg = choice.message as Record<string, unknown>;
+          const msg = choice.message as Record<string, unknown> | undefined;
+          const content = msg?.content ?? msg?.reasoning_content ?? msg?.reasoning ?? "";
           return {
             index: choice.index ?? 0,
-            message: { role: "assistant", content: msg?.content ?? "" },
+            message: { role: "assistant", content: typeof content === "string" ? content : "" },
             finish_reason: choice.finish_reason ?? "stop",
           };
         }),
         usage: {
-          prompt_tokens: (chatResult.usage as Record<string, unknown>)?.prompt_tokens ?? 0,
-          completion_tokens: (chatResult.usage as Record<string, unknown>)?.completion_tokens ?? 0,
-          total_tokens: (chatResult.usage as Record<string, unknown>)?.total_tokens ?? 0,
+          prompt_tokens: usage?.prompt_tokens ?? 0,
+          completion_tokens: usage?.completion_tokens ?? 0,
+          total_tokens: usage?.total_tokens ?? 0,
         },
       };
       return new Response(

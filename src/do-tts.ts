@@ -1,8 +1,6 @@
-import { resolveModel } from "./models";
+import { resolveModel, DEFAULT_TTS_MODEL } from "./models";
 import { errorResponse } from "./auth";
 import type { Env } from "./types";
-
-const DEFAULT_TTS_MODEL = "@cf/myshell-ai/melotts";
 
 interface TtsRequestBody {
   input?: string;
@@ -62,7 +60,11 @@ export async function handleTts(
     return errorResponse(502, "Unexpected AI response format", "server_error");
   }
 
-  const audioBytes = Uint8Array.from(atob(result.audio), (c) => c.charCodeAt(0));
+  const bin = atob(result.audio);
+  const audioBytes = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) {
+    audioBytes[i] = bin.charCodeAt(i);
+  }
 
   return new Response(audioBytes, {
     status: 200,

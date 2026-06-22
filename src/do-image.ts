@@ -95,6 +95,16 @@ export async function handleImage(
     return errorResponse(400, "Only n=1 is supported", "invalid_request_error", "n", "unsupported_value");
   }
 
+  if (body.response_format && body.response_format !== "b64_json") {
+    return errorResponse(
+      400,
+      "response_format must be 'b64_json' (the proxy does not host downloadable image URLs)",
+      "invalid_request_error",
+      "response_format",
+      "unsupported_value",
+    );
+  }
+
   const rawModel = typeof body.model === "string" && body.model.length > 0
     ? body.model
     : DEFAULT_IMAGE_MODEL;
@@ -119,17 +129,14 @@ export async function handleImage(
   if (typeof result.image === "string") {
     base64 = result.image;
   } else if (result.image instanceof Uint8Array) {
-    base64 = arrayBufferToBase64(result.image.buffer as ArrayBuffer);
+    base64 = arrayBufferToBase64(result.image.buffer);
   } else if (result.image instanceof ArrayBuffer) {
     base64 = arrayBufferToBase64(result.image);
   } else {
     return errorResponse(502, "Unexpected AI response format", "server_error");
   }
 
-  const useUrl = body.response_format === "url";
-  const imageItem = useUrl
-    ? { url: `data:image/png;base64,${base64}` }
-    : { b64_json: base64 };
+  const imageItem = { b64_json: base64 };
 
   return new Response(
     JSON.stringify({

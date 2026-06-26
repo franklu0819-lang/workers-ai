@@ -63,10 +63,18 @@ export async function handleTts(
   const audioBuffer = base64ToArrayBuffer(result.audio);
   const audioBytes = new Uint8Array(audioBuffer);
 
+  // melotts returns WAV (RIFF/WAVE) audio; sniff the container so the
+  // Content-Type matches the actual bytes rather than always claiming MPEG.
+  const isWav =
+    audioBytes[0] === 0x52 && // R
+    audioBytes[1] === 0x49 && // I
+    audioBytes[2] === 0x46 && // F
+    audioBytes[3] === 0x46;   // F
+
   return new Response(audioBytes, {
     status: 200,
     headers: {
-      "Content-Type": "audio/mpeg",
+      "Content-Type": isWav ? "audio/wav" : "audio/mpeg",
       "Content-Length": String(audioBytes.byteLength),
     },
   });

@@ -65,8 +65,6 @@ const aliasMap = new Map<string, string>(
   MODEL_ENTRIES.map((entry) => [entry.alias, entry.id]),
 );
 
-const LIST_CREATED = Math.floor(Date.now() / 1000);
-
 /**
  * Resolve a model identifier.
  * - Known alias → full @cf/ ID
@@ -83,12 +81,15 @@ export function resolveModel(input: string): string {
  * Return all available models in OpenAI-compatible list format.
  */
 export function getModelList(): ModelList {
+  // Computed at request time — Date.now() during module/isolate init returns 0
+  // in the Workers runtime, so a module-level constant would yield created: 0.
+  const created = Math.floor(Date.now() / 1000);
   const entries: ModelInfo[] = [];
   for (const entry of MODEL_ENTRIES) {
     entries.push({
       id: entry.id,
       object: "model" as const,
-      created: LIST_CREATED,
+      created,
       owned_by: "cloudflare",
       type: entry.type,
       alias: entry.alias,

@@ -75,9 +75,12 @@ export async function handleAsr(
   }
 
   const useBase64 = BASE64_AUDIO_MODELS.has(model);
+  // Non-base64 whisper models require audio as a number[] of 8-bit values
+  // (per @cloudflare/workers-types: Ai_Cf_Openai_Whisper_Input). A Uint8Array
+  // is rejected at runtime, so we convert to a plain array.
   const audioInput = useBase64
     ? arrayBufferToBase64(audioBuffer)
-    : new Uint8Array(audioBuffer);
+    : Array.from(new Uint8Array(audioBuffer));
 
   const input: Record<string, unknown> = { audio: audioInput };
   if (language) input.language = language;

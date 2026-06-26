@@ -119,39 +119,44 @@ function transformSseStream(source: ReadableStream, id: string, created: number,
   }
 
   return new ReadableStream({
-    // One upstream read per pull() so the consumer's backpressure paces the
-    // source. If a read yields no complete lines, pull() will be invoked again
-    // automatically (queue is below the high-water mark), so the stream never
-    // stalls.
+    // Drain the upstream within a single pull() so the terminal `done` branch
+    // always runs in the same call that detects it (a previous one-read-per-pull
+    // version missed it because the final pull was never rescheduled, dropping
+    // the stop chunk and [DONE]). We still yield on backpressure via
+    // desiredSize so a slow consumer can pace the source.
     async pull(controller) {
-      if (finished) return;
-      const { done, value } = await reader.read();
+      while (!finished) {
+        const { done, value } = await reader.read();
 
-      if (done) {
-        // Flush any trailing line that lacked a final newline (parsed, not raw).
-        if (buffer.trim()) processLine(controller, buffer);
-        ensureRole(controller);
-        controller.enqueue(encoder.encode(toOpenAiStreamChunk(id, created, model, "", "stop")));
-        controller.enqueue(encoder.encode("data: [DONE]\n\n"));
-        controller.close();
-        finished = true;
-        return;
+        if (done) {
+          // Flush any trailing line that lacked a final newline (parsed, not raw).
+          if (buffer.trim()) processLine(controller, buffer);
+          ensureRole(controller);
+          controller.enqueue(encoder.encode(toOpenAiStreamChunk(id, created, model, "", "stop")));
+          controller.enqueue(encoder.encode("data: [DONE]\n\n"));
+          controller.close();
+          finished = true;
+          return;
+        }
+
+        buffer += decoder.decode(value, { stream: true });
+        if (buffer.length > MAX_BUFFER) {
+          const errChunk = { error: { message: "Stream buffer overflow", type: "server_error" } };
+          controller.enqueue(encoder.encode(`data: ${JSON.stringify(errChunk)}\n\n`));
+          controller.enqueue(encoder.encode("data: [DONE]\n\n"));
+          controller.close();
+          finished = true;
+          reader.cancel();
+          return;
+        }
+
+        const lines = buffer.split("\n");
+        buffer = lines.pop() ?? "";
+        for (const line of lines) processLine(controller, line);
+
+        // Yield on backpressure; pull() resumes when the consumer reads more.
+        if (controller.desiredSize != null && controller.desiredSize <= 0) return;
       }
-
-      buffer += decoder.decode(value, { stream: true });
-      if (buffer.length > MAX_BUFFER) {
-        const errChunk = { error: { message: "Stream buffer overflow", type: "server_error" } };
-        controller.enqueue(encoder.encode(`data: ${JSON.stringify(errChunk)}\n\n`));
-        controller.enqueue(encoder.encode("data: [DONE]\n\n"));
-        controller.close();
-        finished = true;
-        reader.cancel();
-        return;
-      }
-
-      const lines = buffer.split("\n");
-      buffer = lines.pop() ?? "";
-      for (const line of lines) processLine(controller, line);
     },
     cancel() {
       reader.cancel();

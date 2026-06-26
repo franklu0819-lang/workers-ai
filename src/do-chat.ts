@@ -1,5 +1,5 @@
 import { resolveModel, DEFAULT_CHAT_MODEL } from "./models";
-import { errorResponse } from "./auth";
+import { errorResponse } from "./utils";
 import type { Env } from "./types";
 
 interface ChatRequestBody {
@@ -60,10 +60,11 @@ function toOpenAiStreamChunk(id: string, created: number, model: string, text: s
 function transformSseStream(source: ReadableStream, id: string, created: number, model: string): ReadableStream {
   const reader = source.getReader();
   const decoder = new TextDecoder();
+  const encoder = new TextEncoder();
   let buffer = "";
   let sentRole = false;
+  let finished = false;
 
-  const encode = (text: string) => new TextEncoder().encode(text);
   const MAX_BUFFER = 1024 * 1024;
 
   function ensureRole(controller: ReadableStreamDefaultController) {
@@ -75,70 +76,82 @@ function transformSseStream(source: ReadableStream, id: string, created: number,
       model,
       choices: [{ index: 0, delta: { role: "assistant", content: "" }, finish_reason: null }],
     };
-    controller.enqueue(encode(`data: ${JSON.stringify(roleChunk)}\n\n`));
+    controller.enqueue(encoder.encode(`data: ${JSON.stringify(roleChunk)}\n\n`));
     sentRole = true;
   }
 
-  return new ReadableStream({
-    async pull(controller) {
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) {
-          if (buffer.trim()) {
-            controller.enqueue(encode(buffer));
-          }
-          ensureRole(controller);
-          controller.enqueue(encode(toOpenAiStreamChunk(id, created, model, "", "stop")));
-          controller.enqueue(encode("data: [DONE]\n\n"));
-          controller.close();
-          return;
-        }
+  function emitContent(controller: ReadableStreamDefaultController, text: string) {
+    if (!text) return;
+    ensureRole(controller);
+    controller.enqueue(encoder.encode(toOpenAiStreamChunk(id, created, model, text, null)));
+  }
 
-        buffer += decoder.decode(value, { stream: true });
-        if (buffer.length > MAX_BUFFER) {
-          buffer = "";
-        }
-        const lines = buffer.split("\n");
-        buffer = lines.pop() ?? "";
+  // Parse one SSE data line and emit any content it carries.
+  function processLine(controller: ReadableStreamDefaultController, line: string) {
+    const trimmed = line.trim();
+    if (!trimmed.startsWith("data:")) return;
 
-        for (const line of lines) {
-          const trimmed = line.trim();
-          if (!trimmed || !trimmed.startsWith("data:")) continue;
+    const data = trimmed.slice(5).trim();
+    if (data === "[DONE]") return;
 
-          const data = trimmed.slice(5).trim();
-          if (data === "[DONE]") continue;
+    try {
+      const parsed = JSON.parse(data);
 
-          try {
-            const parsed = JSON.parse(data);
-
-            // Legacy Workers AI format: { response: "text" }
-            if (parsed.response != null && typeof parsed.response === "string") {
-              if (parsed.response) {
-                ensureRole(controller);
-                controller.enqueue(encode(toOpenAiStreamChunk(id, created, model, parsed.response, null)));
-              }
-              continue;
-            }
-
-            // Native OpenAI-compatible format: { choices: [{ delta: { content / reasoning_content } }] }
-            if (parsed.choices && Array.isArray(parsed.choices)) {
-              const choice = parsed.choices[0];
-              if (!choice) continue;
-              const delta = choice.delta as Record<string, unknown> | undefined;
-              if (!delta) continue;
-
-              // Extract content from delta.content or delta.reasoning_content
-              const content = delta.content ?? delta.reasoning_content;
-              if (typeof content === "string" && content) {
-                ensureRole(controller);
-                controller.enqueue(encode(toOpenAiStreamChunk(id, created, model, content, null)));
-              }
-            }
-          } catch {
-            // skip malformed JSON
-          }
-        }
+      // Legacy Workers AI format: { response: "text" }
+      if (parsed.response != null && typeof parsed.response === "string") {
+        emitContent(controller, parsed.response);
+        return;
       }
+
+      // Native OpenAI-compatible format: { choices: [{ delta: { content / reasoning_content } }] }
+      if (parsed.choices && Array.isArray(parsed.choices)) {
+        const choice = parsed.choices[0];
+        if (!choice) return;
+        const delta = choice.delta as Record<string, unknown> | undefined;
+        if (!delta) return;
+
+        const content = delta.content ?? delta.reasoning_content;
+        if (typeof content === "string") emitContent(controller, content);
+      }
+    } catch {
+      // skip malformed JSON
+    }
+  }
+
+  return new ReadableStream({
+    // One upstream read per pull() so the consumer's backpressure paces the
+    // source. If a read yields no complete lines, pull() will be invoked again
+    // automatically (queue is below the high-water mark), so the stream never
+    // stalls.
+    async pull(controller) {
+      if (finished) return;
+      const { done, value } = await reader.read();
+
+      if (done) {
+        // Flush any trailing line that lacked a final newline (parsed, not raw).
+        if (buffer.trim()) processLine(controller, buffer);
+        ensureRole(controller);
+        controller.enqueue(encoder.encode(toOpenAiStreamChunk(id, created, model, "", "stop")));
+        controller.enqueue(encoder.encode("data: [DONE]\n\n"));
+        controller.close();
+        finished = true;
+        return;
+      }
+
+      buffer += decoder.decode(value, { stream: true });
+      if (buffer.length > MAX_BUFFER) {
+        const errChunk = { error: { message: "Stream buffer overflow", type: "server_error" } };
+        controller.enqueue(encoder.encode(`data: ${JSON.stringify(errChunk)}\n\n`));
+        controller.enqueue(encoder.encode("data: [DONE]\n\n"));
+        controller.close();
+        finished = true;
+        reader.cancel();
+        return;
+      }
+
+      const lines = buffer.split("\n");
+      buffer = lines.pop() ?? "";
+      for (const line of lines) processLine(controller, line);
     },
     cancel() {
       reader.cancel();
@@ -242,7 +255,7 @@ export async function handleChat(
       },
     );
   } catch (err) {
-    const message = err instanceof Error ? err.message : "AI binding error";
-    return errorResponse(502, message, "server_error");
+    console.error("chat completion error:", err);
+    return errorResponse(502, "AI service error", "server_error");
   }
 }

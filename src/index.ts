@@ -1,4 +1,5 @@
-import { validateAuth, errorResponse } from "./auth";
+import { validateAuth } from "./auth";
+import { errorResponse } from "./utils";
 import { getModelList } from "./models";
 import { handleChat } from "./do-chat";
 import { handleImage } from "./do-image";
@@ -62,22 +63,29 @@ export default {
       );
     }
 
-    // Body size check for POST endpoints
+    // Body size check for POST endpoints. Content-Length gives a fast early
+    // reject; for chunked uploads (no Content-Length) we buffer once and
+    // enforce the same limit, then hand handlers a reconstructed request.
+    let req: Request = request;
     if (request.method === "POST") {
       const ct = request.headers.get("Content-Type") || "";
       const isMultipart = ct.includes("multipart/form-data");
       const limit = isMultipart ? MAX_MULTIPART_SIZE : MAX_BODY_SIZE;
       const contentLength = request.headers.get("Content-Length");
-      if (!contentLength) {
-        if (!isMultipart) {
+      if (contentLength) {
+        if (parseInt(contentLength, 10) > limit) {
           return withCORS(
             errorResponse(413, "Request body too large", "invalid_request_error"),
           );
         }
-      } else if (parseInt(contentLength, 10) > limit) {
-        return withCORS(
-          errorResponse(413, "Request body too large", "invalid_request_error"),
-        );
+      } else {
+        const buf = await request.arrayBuffer();
+        if (buf.byteLength > limit) {
+          return withCORS(
+            errorResponse(413, "Request body too large", "invalid_request_error"),
+          );
+        }
+        req = new Request(request, { body: buf });
       }
     }
 
@@ -88,7 +96,7 @@ export default {
           errorResponse(405, "Method not allowed", "invalid_request_error"),
         );
       }
-      return withCORS(await handleChat(request, env));
+      return withCORS(await handleChat(req, env));
     }
 
     // POST /v1/images/generations
@@ -98,7 +106,7 @@ export default {
           errorResponse(405, "Method not allowed", "invalid_request_error"),
         );
       }
-      return withCORS(await handleImage(request, env));
+      return withCORS(await handleImage(req, env));
     }
 
     // POST /v1/audio/speech
@@ -108,7 +116,7 @@ export default {
           errorResponse(405, "Method not allowed", "invalid_request_error"),
         );
       }
-      return withCORS(await handleTts(request, env));
+      return withCORS(await handleTts(req, env));
     }
 
     // POST /v1/audio/transcriptions
@@ -118,7 +126,7 @@ export default {
           errorResponse(405, "Method not allowed", "invalid_request_error"),
         );
       }
-      return withCORS(await handleAsr(request, env));
+      return withCORS(await handleAsr(req, env));
     }
 
     return withCORS(

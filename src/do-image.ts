@@ -1,6 +1,5 @@
 import { resolveModel, DEFAULT_IMAGE_MODEL } from "./models";
-import { errorResponse } from "./auth";
-import { arrayBufferToBase64 } from "./utils";
+import { errorResponse, arrayBufferToBase64 } from "./utils";
 import type { Env } from "./types";
 
 interface ImageRequestBody {
@@ -121,8 +120,8 @@ export async function handleImage(
       ? await runMultipart(env, model, body.prompt, width, height, steps)
       : await runJson(env, model, body.prompt, width, height, steps);
   } catch (err) {
-    const message = err instanceof Error ? err.message : "AI binding error";
-    return errorResponse(502, message, "server_error");
+    console.error("image generation error:", err);
+    return errorResponse(502, "AI service error", "server_error");
   }
 
   let base64: string;

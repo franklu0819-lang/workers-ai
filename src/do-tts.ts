@@ -1,5 +1,5 @@
 import { resolveModel, DEFAULT_TTS_MODEL } from "./models";
-import { errorResponse } from "./auth";
+import { errorResponse, base64ToArrayBuffer } from "./utils";
 import type { Env } from "./types";
 
 interface TtsRequestBody {
@@ -52,19 +52,16 @@ export async function handleTts(
       lang,
     }) as { audio?: string };
   } catch (err) {
-    const message = err instanceof Error ? err.message : "AI binding error";
-    return errorResponse(502, message, "server_error");
+    console.error("tts error:", err);
+    return errorResponse(502, "AI service error", "server_error");
   }
 
   if (!result.audio || typeof result.audio !== "string") {
     return errorResponse(502, "Unexpected AI response format", "server_error");
   }
 
-  const bin = atob(result.audio);
-  const audioBytes = new Uint8Array(bin.length);
-  for (let i = 0; i < bin.length; i++) {
-    audioBytes[i] = bin.charCodeAt(i);
-  }
+  const audioBuffer = base64ToArrayBuffer(result.audio);
+  const audioBytes = new Uint8Array(audioBuffer);
 
   return new Response(audioBytes, {
     status: 200,

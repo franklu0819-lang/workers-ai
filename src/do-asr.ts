@@ -1,15 +1,15 @@
 import { resolveModel, DEFAULT_ASR_MODEL } from "./models";
-import { errorResponse } from "./auth";
-import { arrayBufferToBase64 } from "./utils";
+import { errorResponse, arrayBufferToBase64, base64ToArrayBuffer } from "./utils";
 import type { Env } from "./types";
 
 const BASE64_AUDIO_MODELS = new Set([
   "@cf/openai/whisper-large-v3-turbo",
 ]);
 
+const SUPPORTED_FORMATS = new Set(["json", "text", "srt", "vtt"]);
+
 interface AsrResult {
   text?: string;
-  word_count?: number;
   words?: Array<{ word: string; start: number; end: number }>;
   vtt?: string;
 }
@@ -52,12 +52,7 @@ export async function handleAsr(
       return errorResponse(400, "audio (base64) is required", "invalid_request_error");
     }
 
-    const binary = atob(body.audio);
-    const bytes = new Uint8Array(binary.length);
-    for (let i = 0; i < binary.length; i++) {
-      bytes[i] = binary.charCodeAt(i);
-    }
-    audioBuffer = bytes.buffer;
+    audioBuffer = base64ToArrayBuffer(body.audio);
 
     modelStr = body.model;
     language = body.language;
@@ -69,10 +64,20 @@ export async function handleAsr(
   const rawModel = modelStr && modelStr.length > 0 ? modelStr : DEFAULT_ASR_MODEL;
   const model = resolveModel(rawModel);
 
+  if (!SUPPORTED_FORMATS.has(responseFormat)) {
+    return errorResponse(
+      400,
+      `Unsupported response_format: '${responseFormat}'. Supported: json, text, srt, vtt`,
+      "invalid_request_error",
+      "response_format",
+      "unsupported_value",
+    );
+  }
+
   const useBase64 = BASE64_AUDIO_MODELS.has(model);
   const audioInput = useBase64
     ? arrayBufferToBase64(audioBuffer)
-    : [...new Uint8Array(audioBuffer)];
+    : new Uint8Array(audioBuffer);
 
   const input: Record<string, unknown> = { audio: audioInput };
   if (language) input.language = language;
@@ -81,8 +86,8 @@ export async function handleAsr(
   try {
     result = await env.AI.run(model, input) as AsrResult;
   } catch (err) {
-    const message = err instanceof Error ? err.message : "AI binding error";
-    return errorResponse(502, message, "server_error");
+    console.error("asr error:", err);
+    return errorResponse(502, "AI service error", "server_error");
   }
 
   if (!result.text) {
@@ -128,9 +133,12 @@ export async function handleAsr(
 }
 
 function formatSrtTime(seconds: number): string {
-  const h = Math.floor(seconds / 3600);
-  const m = Math.floor((seconds % 3600) / 60);
-  const s = Math.floor(seconds % 60);
-  const ms = Math.floor((seconds % 1) * 1000);
+  // Round once to total milliseconds, then decompose — keeps ms in [0, 999]
+  // and avoids floating-point drift across the h/m/s/ms components.
+  const totalMs = Math.round(seconds * 1000);
+  const h = Math.floor(totalMs / 3600000);
+  const m = Math.floor((totalMs % 3600000) / 60000);
+  const s = Math.floor((totalMs % 60000) / 1000);
+  const ms = totalMs % 1000;
   return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")},${String(ms).padStart(3, "0")}`;
 }

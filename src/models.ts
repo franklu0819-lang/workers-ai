@@ -11,6 +11,11 @@ export interface ModelInfo {
   alias: string;
 }
 
+export interface ModelList {
+  object: "list";
+  data: ModelInfo[];
+}
+
 interface ModelEntry {
   alias: string;
   id: string;
@@ -77,19 +82,16 @@ export function resolveModel(input: string): string {
 /**
  * Return all available models in OpenAI-compatible list format.
  */
-export function getModelList(): {
-  object: "list";
-  data: ModelInfo[];
-} {
+export function getModelList(): ModelList {
   const entries: ModelInfo[] = [];
   for (const entry of MODEL_ENTRIES) {
     entries.push({
-      id: entry.alias,
+      id: entry.id,
       object: "model" as const,
       created: LIST_CREATED,
       owned_by: "cloudflare",
       type: entry.type,
-      alias: entry.id,
+      alias: entry.alias,
     });
   }
   return {

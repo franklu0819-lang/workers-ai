@@ -1,20 +1,5 @@
 import type { Env } from "./types";
-
-export function errorResponse(
-  status: number,
-  message: string,
-  type: string,
-  param: string | null = null,
-  code: string | null = null,
-): Response {
-  return new Response(
-    JSON.stringify({ error: { message, type, param, code } }),
-    {
-      status,
-      headers: { "Content-Type": "application/json" },
-    },
-  );
-}
+import { errorResponse } from "./utils";
 
 export function validateAuth(
   request: Request,

@@ -1,0 +1,16 @@
+# Normalize all text files to LF in the repo and working tree.
+# This overrides core.autocrlf on Windows so Git stops warning about
+# LF/CRLF conversion and diffs stay clean across platforms.
+* text=auto eol=lf
+
+# Binary assets — never normalize
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.webp binary
+*.ico binary
+*.mp3 binary
+*.wav binary
+*.mp4 binary
+*.zip binary

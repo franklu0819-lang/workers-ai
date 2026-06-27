@@ -29,9 +29,10 @@ export const DEFAULT_ASR_MODEL = "@cf/openai/whisper";
 
 const MODEL_ENTRIES: readonly ModelEntry[] = [
   // Chat models
+  { alias: "llama-3.1-8b-fp8", id: "@cf/meta/llama-3.1-8b-instruct-fp8", type: "chat" },
   { alias: "llama-3.1-8b-fast", id: "@cf/meta/llama-3.1-8b-instruct-fast", type: "chat" },
-  { alias: "llama-3.2-3b", id: "@cf/meta/llama-3.2-3b-instruct", type: "chat" },
   { alias: "llama-3.2-1b", id: "@cf/meta/llama-3.2-1b-instruct", type: "chat" },
+  { alias: "llama-3.2-3b", id: "@cf/meta/llama-3.2-3b-instruct", type: "chat" },
   { alias: "llama-3.3-70b", id: "@cf/meta/llama-3.3-70b-instruct-fp8-fast", type: "chat" },
   { alias: "llama-4-scout", id: "@cf/meta/llama-4-scout-17b-16e-instruct", type: "chat" },
   { alias: "qwq-32b", id: "@cf/qwen/qwq-32b", type: "chat" },
@@ -43,8 +44,9 @@ const MODEL_ENTRIES: readonly ModelEntry[] = [
   { alias: "mistral-small", id: "@cf/mistralai/mistral-small-3.1-24b-instruct", type: "chat" },
   { alias: "glm-4.7-flash", id: "@cf/zai-org/glm-4.7-flash", type: "chat" },
   { alias: "glm-5.2", id: "@cf/zai-org/glm-5.2", type: "chat" },
-  { alias: "gpt-oss-120b", id: "@cf/openai/gpt-oss-120b", type: "chat" },
   { alias: "gpt-oss-20b", id: "@cf/openai/gpt-oss-20b", type: "chat" },
+  { alias: "gpt-oss-120b", id: "@cf/openai/gpt-oss-120b", type: "chat" },
+  { alias: "kimi-k2.5", id: "@cf/moonshotai/kimi-k2.5", type: "chat" },
   { alias: "kimi-k2.6", id: "@cf/moonshotai/kimi-k2.6", type: "chat" },
   { alias: "kimi-k2.7-code", id: "@cf/moonshotai/kimi-k2.7-code", type: "chat" },
   { alias: "nemotron-3-120b", id: "@cf/nvidia/nemotron-3-120b-a12b", type: "chat" },

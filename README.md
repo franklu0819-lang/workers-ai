@@ -105,10 +105,11 @@ GET /v1/models
 
 ## Supported Models
 
-### Chat (19 models)
+### Chat (21 models)
 
 | Alias | Model ID |
 |-------|----------|
+| `llama-3.1-8b-fp8` | `@cf/meta/llama-3.1-8b-instruct-fp8` |
 | `llama-3.1-8b-fast` | `@cf/meta/llama-3.1-8b-instruct-fast` |
 | `llama-3.3-70b` | `@cf/meta/llama-3.3-70b-instruct-fp8-fast` |
 | `llama-4-scout` | `@cf/meta/llama-4-scout-17b-16e-instruct` |
@@ -125,6 +126,7 @@ GET /v1/models
 | `glm-5.2` | `@cf/zai-org/glm-5.2` |
 | `gpt-oss-120b` | `@cf/openai/gpt-oss-120b` |
 | `gpt-oss-20b` | `@cf/openai/gpt-oss-20b` |
+| `kimi-k2.5` | `@cf/moonshotai/kimi-k2.5` |
 | `kimi-k2.6` | `@cf/moonshotai/kimi-k2.6` |
 | `kimi-k2.7-code` | `@cf/moonshotai/kimi-k2.7-code` |
 | `nemotron-3-120b` | `@cf/nvidia/nemotron-3-120b-a12b` |

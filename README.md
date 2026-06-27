@@ -105,7 +105,7 @@ GET /v1/models
 
 ## Supported Models
 
-### Chat (17 models)
+### Chat (19 models)
 
 | Alias | Model ID |
 |-------|----------|
@@ -122,9 +122,11 @@ GET /v1/models
 | `granite-micro` | `@cf/ibm-granite/granite-4.0-h-micro` |
 | `mistral-small` | `@cf/mistralai/mistral-small-3.1-24b-instruct` |
 | `glm-4.7-flash` | `@cf/zai-org/glm-4.7-flash` |
+| `glm-5.2` | `@cf/zai-org/glm-5.2` |
 | `gpt-oss-120b` | `@cf/openai/gpt-oss-120b` |
 | `gpt-oss-20b` | `@cf/openai/gpt-oss-20b` |
 | `kimi-k2.6` | `@cf/moonshotai/kimi-k2.6` |
+| `kimi-k2.7-code` | `@cf/moonshotai/kimi-k2.7-code` |
 | `nemotron-3-120b` | `@cf/nvidia/nemotron-3-120b-a12b` |
 
 ### Image (5 models)

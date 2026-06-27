@@ -42,9 +42,11 @@ const MODEL_ENTRIES: readonly ModelEntry[] = [
   { alias: "granite-micro", id: "@cf/ibm-granite/granite-4.0-h-micro", type: "chat" },
   { alias: "mistral-small", id: "@cf/mistralai/mistral-small-3.1-24b-instruct", type: "chat" },
   { alias: "glm-4.7-flash", id: "@cf/zai-org/glm-4.7-flash", type: "chat" },
+  { alias: "glm-5.2", id: "@cf/zai-org/glm-5.2", type: "chat" },
   { alias: "gpt-oss-120b", id: "@cf/openai/gpt-oss-120b", type: "chat" },
   { alias: "gpt-oss-20b", id: "@cf/openai/gpt-oss-20b", type: "chat" },
   { alias: "kimi-k2.6", id: "@cf/moonshotai/kimi-k2.6", type: "chat" },
+  { alias: "kimi-k2.7-code", id: "@cf/moonshotai/kimi-k2.7-code", type: "chat" },
   { alias: "nemotron-3-120b", id: "@cf/nvidia/nemotron-3-120b-a12b", type: "chat" },
   // Image models
   { alias: "flux-schnell", id: "@cf/black-forest-labs/flux-1-schnell", type: "image" },

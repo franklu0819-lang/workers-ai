@@ -4,3 +4,8 @@ compatibility_date = "2025-04-01"
 
 [ai]
 binding = "AI"
+
+# KV namespace for per-key RPM rate limiting (sliding window counters).
+[[kv_namespaces]]
+binding = "RATE_LIMIT_KV"
+id = "1458660355b7472281cb17083a20871a"

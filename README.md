@@ -9,6 +9,7 @@ OpenAI-compatible API proxy running on Cloudflare Workers. Forwards requests to 
 - **Text-to-Speech** — `/v1/audio/speech`
 - **Speech-to-Text** — `/v1/audio/transcriptions`
 - Bearer token authentication
+- Per-key rate limiting (RPM)
 - CORS support
 - Model alias resolution
 
@@ -29,6 +30,10 @@ npm run deploy
 
 # Set production secret
 npx wrangler secret put API_KEY
+
+# Create the KV namespace used for rate limiting (one-time)
+npx wrangler kv namespace create RATE_LIMIT_KV
+# Then paste the returned `id` into the [[kv_namespaces]] block in wrangler.toml
 ```
 
 ## API Endpoints
@@ -78,7 +83,7 @@ POST /v1/audio/speech
 }
 ```
 
-Returns `audio/mpeg` binary. English only.
+Returns WAV audio (`audio/wav`) binary. English only.
 
 ### Speech-to-Text
 
@@ -157,19 +162,41 @@ GET /v1/models
 
 You can use either the alias or the full `@cf/` model ID in requests. Unknown IDs are passed through to Cloudflare as-is.
 
+## Rate Limiting
+
+Each API key is rate-limited to **10 requests per minute** (fixed window). The limit is enforced per key after authentication, so brute-force attempts don't consume quota.
+
+- Successful responses include `X-RateLimit-Remaining` (requests left in the current window).
+- When the limit is exceeded, the proxy returns `429 Too Many Requests` with a `Retry-After` header (seconds until the window resets).
+
+```bash
+$ curl -i https://workers-ai.galatea-ai.cc/v1/models -H "Authorization: Bearer <key>"
+HTTP/1.1 200 OK
+X-RateLimit-Remaining: 9
+...
+
+# after 10 requests in the same minute:
+HTTP/1.1 429 Too Many Requests
+Retry-After: 37
+{"error":{"message":"Rate limit exceeded. Please retry shortly.","type":"rate_limit_error","code":"rate_limit_exceeded"}}
+```
+
+The limit is configured via `RATE_LIMIT_RPM` in `src/rate-limit.ts`. Counters are stored in the `RATE_LIMIT_KV` KV namespace (see Quick Start). KV is eventually consistent, so under heavy concurrent bursts the counter may slightly undercount; this is acceptable for abuse prevention but not a hard billing guarantee. For strict atomic limiting, use a Durable Object or the native Rate Limit binding instead.
+
 ## Project Structure
 
 ```
 src/
-├── index.ts      # Router, CORS, auth gate
-├── auth.ts       # Bearer token validation
-├── types.ts      # Shared Env interface
-├── utils.ts      # Shared utilities
-├── models.ts     # Model registry and alias resolution
-├── do-chat.ts    # Chat completions handler
-├── do-image.ts   # Image generation handler
-├── do-tts.ts     # Text-to-speech handler
-└── do-asr.ts     # Speech-to-text handler
+├── index.ts        # Router, CORS, auth gate
+├── auth.ts         # Bearer token validation + rate-limit gate
+├── rate-limit.ts   # Per-key fixed-window RPM limiter (KV-backed)
+├── types.ts        # Shared Env interface
+├── utils.ts        # Shared utilities
+├── models.ts       # Model registry and alias resolution
+├── do-chat.ts      # Chat completions handler
+├── do-image.ts     # Image generation handler
+├── do-tts.ts       # Text-to-speech handler
+└── do-asr.ts       # Speech-to-text handler
 ```
 
 ## Usage Example

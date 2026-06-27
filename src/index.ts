@@ -1,4 +1,4 @@
-import { validateAuth } from "./auth";
+import { authorize } from "./auth";
 import { errorResponse } from "./utils";
 import { getModelList } from "./models";
 import { handleChat } from "./do-chat";
@@ -10,12 +10,15 @@ import type { Env } from "./types";
 const MAX_BODY_SIZE = 10 * 1024 * 1024; // 10 MB for JSON bodies
 const MAX_MULTIPART_SIZE = 25 * 1024 * 1024; // 25 MB for audio uploads
 
-function withCORS(response: Response): Response {
+function withCORS(response: Response, extra?: Record<string, string>): Response {
   const headers = new Headers(response.headers);
   headers.set("Access-Control-Allow-Origin", "*");
   headers.set("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
   headers.set("Access-Control-Allow-Headers", "Authorization, Content-Type");
   headers.set("Access-Control-Max-Age", "86400");
+  if (extra) {
+    for (const [k, v] of Object.entries(extra)) headers.set(k, v);
+  }
   return new Response(response.body, {
     status: response.status,
     statusText: response.statusText,
@@ -44,19 +47,29 @@ export default {
       return corsOptions();
     }
 
-    const authError = validateAuth(request, env);
-    if (authError) {
-      return withCORS(authError);
+    const auth = await authorize(request, env);
+    if (!auth.ok) {
+      const res = auth.response;
+      if (res.status === 429 && auth.retryAfter != null) {
+        const headers = new Headers(res.headers);
+        headers.set("Retry-After", String(auth.retryAfter));
+        return withCORS(new Response(res.body, { status: 429, statusText: res.statusText, headers }));
+      }
+      return withCORS(res);
     }
+
+    // Surface remaining quota on every response so clients can self-throttle.
+    const respond = (response: Response) =>
+      withCORS(response, { "X-RateLimit-Remaining": String(auth.rateLimit.remaining) });
 
     // GET /v1/models
     if (pathname === "/v1/models") {
       if (request.method !== "GET") {
-        return withCORS(
+        return respond(
           errorResponse(405, "Method not allowed", "invalid_request_error"),
         );
       }
-      return withCORS(
+      return respond(
         new Response(JSON.stringify(getModelList()), {
           headers: { "Content-Type": "application/json" },
         }),
@@ -74,14 +87,14 @@ export default {
       const contentLength = request.headers.get("Content-Length");
       if (contentLength) {
         if (parseInt(contentLength, 10) > limit) {
-          return withCORS(
+          return respond(
             errorResponse(413, "Request body too large", "invalid_request_error"),
           );
         }
       } else {
         const buf = await request.arrayBuffer();
         if (buf.byteLength > limit) {
-          return withCORS(
+          return respond(
             errorResponse(413, "Request body too large", "invalid_request_error"),
           );
         }
@@ -92,44 +105,44 @@ export default {
     // POST /v1/chat/completions
     if (pathname === "/v1/chat/completions") {
       if (request.method !== "POST") {
-        return withCORS(
+        return respond(
           errorResponse(405, "Method not allowed", "invalid_request_error"),
         );
       }
-      return withCORS(await handleChat(req, env));
+      return respond(await handleChat(req, env));
     }
 
     // POST /v1/images/generations
     if (pathname === "/v1/images/generations") {
       if (request.method !== "POST") {
-        return withCORS(
+        return respond(
           errorResponse(405, "Method not allowed", "invalid_request_error"),
         );
       }
-      return withCORS(await handleImage(req, env));
+      return respond(await handleImage(req, env));
     }
 
     // POST /v1/audio/speech
     if (pathname === "/v1/audio/speech") {
       if (request.method !== "POST") {
-        return withCORS(
+        return respond(
           errorResponse(405, "Method not allowed", "invalid_request_error"),
         );
       }
-      return withCORS(await handleTts(req, env));
+      return respond(await handleTts(req, env));
     }
 
     // POST /v1/audio/transcriptions
     if (pathname === "/v1/audio/transcriptions") {
       if (request.method !== "POST") {
-        return withCORS(
+        return respond(
           errorResponse(405, "Method not allowed", "invalid_request_error"),
         );
       }
-      return withCORS(await handleAsr(req, env));
+      return respond(await handleAsr(req, env));
     }
 
-    return withCORS(
+    return respond(
       errorResponse(404, "Unknown endpoint", "invalid_request_error"),
     );
   },

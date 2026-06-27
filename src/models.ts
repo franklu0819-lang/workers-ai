@@ -3,12 +3,12 @@
 export type ModelType = "chat" | "image" | "tts" | "asr";
 
 export interface ModelInfo {
-  id: string;
+  id: string; // short, user-facing name (what clients send in requests)
   object: "model";
   created: number;
   owned_by: string;
   type: ModelType;
-  alias: string;
+  model_id: string; // full Cloudflare "@cf/..." identifier
 }
 
 export interface ModelList {
@@ -17,8 +17,8 @@ export interface ModelList {
 }
 
 interface ModelEntry {
-  alias: string;
-  id: string;
+  id: string; // short, user-facing name
+  model_id: string; // full Cloudflare "@cf/..." identifier
   type: ModelType;
 }
 
@@ -29,49 +29,50 @@ export const DEFAULT_ASR_MODEL = "@cf/openai/whisper";
 
 const MODEL_ENTRIES: readonly ModelEntry[] = [
   // Chat models
-  { alias: "llama-3.1-8b-fp8", id: "@cf/meta/llama-3.1-8b-instruct-fp8", type: "chat" },
-  { alias: "llama-3.1-8b-fast", id: "@cf/meta/llama-3.1-8b-instruct-fast", type: "chat" },
-  { alias: "llama-3.2-1b", id: "@cf/meta/llama-3.2-1b-instruct", type: "chat" },
-  { alias: "llama-3.2-3b", id: "@cf/meta/llama-3.2-3b-instruct", type: "chat" },
-  { alias: "llama-3.3-70b", id: "@cf/meta/llama-3.3-70b-instruct-fp8-fast", type: "chat" },
-  { alias: "llama-4-scout", id: "@cf/meta/llama-4-scout-17b-16e-instruct", type: "chat" },
-  { alias: "qwq-32b", id: "@cf/qwen/qwq-32b", type: "chat" },
-  { alias: "qwen2.5-coder", id: "@cf/qwen/qwen2.5-coder-32b-instruct", type: "chat" },
-  { alias: "qwen3-30b-a3b", id: "@cf/qwen/qwen3-30b-a3b-fp8", type: "chat" },
-  { alias: "deepseek-r1-32b", id: "@cf/deepseek-ai/deepseek-r1-distill-qwen-32b", type: "chat" },
-  { alias: "gemma-4-26b-a4b", id: "@cf/google/gemma-4-26b-a4b-it", type: "chat" },
-  { alias: "granite-micro", id: "@cf/ibm-granite/granite-4.0-h-micro", type: "chat" },
-  { alias: "mistral-small", id: "@cf/mistralai/mistral-small-3.1-24b-instruct", type: "chat" },
-  { alias: "glm-4.7-flash", id: "@cf/zai-org/glm-4.7-flash", type: "chat" },
-  { alias: "glm-5.2", id: "@cf/zai-org/glm-5.2", type: "chat" },
-  { alias: "gpt-oss-20b", id: "@cf/openai/gpt-oss-20b", type: "chat" },
-  { alias: "gpt-oss-120b", id: "@cf/openai/gpt-oss-120b", type: "chat" },
-  { alias: "kimi-k2.5", id: "@cf/moonshotai/kimi-k2.5", type: "chat" },
-  { alias: "kimi-k2.6", id: "@cf/moonshotai/kimi-k2.6", type: "chat" },
-  { alias: "kimi-k2.7-code", id: "@cf/moonshotai/kimi-k2.7-code", type: "chat" },
-  { alias: "nemotron-3-120b", id: "@cf/nvidia/nemotron-3-120b-a12b", type: "chat" },
+  { id: "llama-3.1-8b-fp8", model_id: "@cf/meta/llama-3.1-8b-instruct-fp8", type: "chat" },
+  { id: "llama-3.1-8b-fast", model_id: "@cf/meta/llama-3.1-8b-instruct-fast", type: "chat" },
+  { id: "llama-3.2-1b", model_id: "@cf/meta/llama-3.2-1b-instruct", type: "chat" },
+  { id: "llama-3.2-3b", model_id: "@cf/meta/llama-3.2-3b-instruct", type: "chat" },
+  { id: "llama-3.3-70b", model_id: "@cf/meta/llama-3.3-70b-instruct-fp8-fast", type: "chat" },
+  { id: "llama-4-scout", model_id: "@cf/meta/llama-4-scout-17b-16e-instruct", type: "chat" },
+  { id: "qwq-32b", model_id: "@cf/qwen/qwq-32b", type: "chat" },
+  { id: "qwen2.5-coder", model_id: "@cf/qwen/qwen2.5-coder-32b-instruct", type: "chat" },
+  { id: "qwen3-30b-a3b", model_id: "@cf/qwen/qwen3-30b-a3b-fp8", type: "chat" },
+  { id: "deepseek-r1-32b", model_id: "@cf/deepseek-ai/deepseek-r1-distill-qwen-32b", type: "chat" },
+  { id: "gemma-4-26b-a4b", model_id: "@cf/google/gemma-4-26b-a4b-it", type: "chat" },
+  { id: "granite-micro", model_id: "@cf/ibm-granite/granite-4.0-h-micro", type: "chat" },
+  { id: "mistral-small", model_id: "@cf/mistralai/mistral-small-3.1-24b-instruct", type: "chat" },
+  { id: "glm-4.7-flash", model_id: "@cf/zai-org/glm-4.7-flash", type: "chat" },
+  { id: "glm-5.2", model_id: "@cf/zai-org/glm-5.2", type: "chat" },
+  { id: "gpt-oss-20b", model_id: "@cf/openai/gpt-oss-20b", type: "chat" },
+  { id: "gpt-oss-120b", model_id: "@cf/openai/gpt-oss-120b", type: "chat" },
+  { id: "kimi-k2.5", model_id: "@cf/moonshotai/kimi-k2.5", type: "chat" },
+  { id: "kimi-k2.6", model_id: "@cf/moonshotai/kimi-k2.6", type: "chat" },
+  { id: "kimi-k2.7-code", model_id: "@cf/moonshotai/kimi-k2.7-code", type: "chat" },
+  { id: "nemotron-3-120b", model_id: "@cf/nvidia/nemotron-3-120b-a12b", type: "chat" },
   // Image models
-  { alias: "flux-schnell", id: "@cf/black-forest-labs/flux-1-schnell", type: "image" },
-  { alias: "flux-2-dev", id: "@cf/black-forest-labs/flux-2-dev", type: "image" },
-  { alias: "flux-2-klein-4b", id: "@cf/black-forest-labs/flux-2-klein-4b", type: "image" },
-  { alias: "flux-2-klein-9b", id: "@cf/black-forest-labs/flux-2-klein-9b", type: "image" },
-  { alias: "lucid-origin", id: "@cf/leonardo/lucid-origin", type: "image" },
+  { id: "flux-schnell", model_id: "@cf/black-forest-labs/flux-1-schnell", type: "image" },
+  { id: "flux-2-dev", model_id: "@cf/black-forest-labs/flux-2-dev", type: "image" },
+  { id: "flux-2-klein-4b", model_id: "@cf/black-forest-labs/flux-2-klein-4b", type: "image" },
+  { id: "flux-2-klein-9b", model_id: "@cf/black-forest-labs/flux-2-klein-9b", type: "image" },
+  { id: "lucid-origin", model_id: "@cf/leonardo/lucid-origin", type: "image" },
   // TTS models
-  { alias: "melotts", id: "@cf/myshell-ai/melotts", type: "tts" },
+  { id: "melotts", model_id: "@cf/myshell-ai/melotts", type: "tts" },
   // ASR models
-  { alias: "whisper", id: "@cf/openai/whisper", type: "asr" },
-  { alias: "whisper-tiny-en", id: "@cf/openai/whisper-tiny-en", type: "asr" },
-  { alias: "whisper-large-v3-turbo", id: "@cf/openai/whisper-large-v3-turbo", type: "asr" },
+  { id: "whisper", model_id: "@cf/openai/whisper", type: "asr" },
+  { id: "whisper-tiny-en", model_id: "@cf/openai/whisper-tiny-en", type: "asr" },
+  { id: "whisper-large-v3-turbo", model_id: "@cf/openai/whisper-large-v3-turbo", type: "asr" },
 ];
 
-// Alias → full model ID lookup map
+// Short name (id) → full Cloudflare model_id lookup. Used to resolve the
+// user-facing identifier clients send into the @cf/ ID the AI binding expects.
 const aliasMap = new Map<string, string>(
-  MODEL_ENTRIES.map((entry) => [entry.alias, entry.id]),
+  MODEL_ENTRIES.map((entry) => [entry.id, entry.model_id]),
 );
 
 /**
  * Resolve a model identifier.
- * - Known alias → full @cf/ ID
+ * - Known short name → full @cf/ model_id
  * - Already a @cf/ ID → return as-is
  * - Anything else → return as-is (let Cloudflare handle the error)
  */
@@ -96,7 +97,7 @@ export function getModelList(): ModelList {
       created,
       owned_by: "cloudflare",
       type: entry.type,
-      alias: entry.alias,
+      model_id: entry.model_id,
     });
   }
   return {
